@@ -1,0 +1,175 @@
+Testing with Go
+Lessons learned
+7 May 2015
+
+Frank Schroeder
+Architect, eBay Classifieds Group Amsterdam
+frschroeder@ebay.com
+
+* Overview
+
+- 6 devs working in Go for 1.5 years
+- 36 apps (services & tools)
+- 25k lines of our own code in 420 files
+- still less than 20 dependencies
+- yes, we're still hiring
+
+* Testing
+
+- Unit tests
+- Comparison with DeepEqual
+- Mocking `time.Now()` and `math.Rand()`
+
+* Unit tests
+
+Lets write some tests for a simple function
+
+.code main_test.go /a OMIT/,/A OMIT/
+
+* First attempt
+
+Old style
+
+.code main_test.go /b OMIT/,/B OMIT/
+
+* Second attempt
+
+Table driven
+
+.code main_test.go /c OMIT/,/C OMIT/
+
+* Third attempt
+
+Anonymous structs and standard names (`tests`)
+
+.code main_test.go /d OMIT/,/D OMIT/
+
+* Fourth attempt
+
+`got != want` pattern
+
+.code main_test.go /e OMIT/,/E OMIT/
+
+* Testing errors
+
+.code main_test.go /f OMIT/,/F OMIT/
+
+* Testing errors
+
+.code main_test.go /g1 OMIT/,/G1 OMIT/
+
+* Testing errors: TestCompareJSON1 continued
+
+.code main_test.go /G1 OMIT/,/G2 OMIT/
+
+* Testing structs
+
+.code main_test.go /h OMIT/,/H OMIT/
+
+* Testing structs
+
+.code main_test.go /i1 OMIT/,/I1 OMIT/
+
+* Testing structs: got != want continued
+
+.code main_test.go /i2 OMIT/,/I2 OMIT/
+
+* Testing structs: DeepEqual time
+
+.code main_test.go /i3 OMIT/,/I3 OMIT/
+
+* Testing structs: Real world objects
+
+	apiChild := &tenantapi.Category{
+		CategoryID: 100,
+		Locales:    []locale.Locale{"nl", "en"},
+		Label:      map[locale.Locale]string{"nl": "kind", "en": "child"},
+		Status:     "ACTIVE",
+		Config: &tenantapi.CategoryConfig{
+			Cpc:               interval.MustParse("[1,10]"),
+			TotalBudget:       interval.MustParse("[10,20]"),
+			MinDailyBudget:    50,
+			ActiveAds:         interval.MustParse("[1,20]"),
+			TitleLength:       interval.MustParse("[3,60]"),
+			DescriptionLength: interval.MustParse("[5,100]"),
+			Images:            interval.MustParse("[1,8]"),
+			URLMandatory:      true,
+			ShippingOption:    "OPTIONAL",
+			Currency:          "USD",
+			PriceTypes:        []tenantapi.PriceType{"FIXED_PRICE", "SWAP"},
+			Verticals:         []string{"CARS"},
+			Tags:              map[locale.Locale][]string{"nl": []string{"foo"}, "en": []string{"bar"}},
+			RelatedPaths:      []string{"1_2", "3_4"},
+		},
+	}
+
+* Testing structs: Where is the difference?
+
+  load_test.go:90: got &model.Category{Id:100, ParentId:1, Path:"1_100",
+  Level:2, Locales:[]string{"nl", "en"}, Label:map[string]string{"nl":"kind",
+  "en":"child"}, Status:1, Config:(*model.CategoryConfig)(0xc2080923c0),
+  Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{},
+  Breadcrumbs:map[string][]string{"nl":[]string{"ouder", "kind"},
+  "en":[]string{"parent", "child"}}} want &model.Category{Id:100, ParentId:1,
+  Path:"1_100", Level:2, Locales:[]string{"nl", "en"},
+  Label:map[string]string{"nl":"kind", "en":"child"}, Status:1,
+  Config:(*model.CategoryConfig)(0xc208092180), Children:[]int64{},
+  AttributeGroups:[]*model.AttributeGroup{},
+  Breadcrumbs:map[string][]string{"en":[]string{"parent", "child"},
+  "nl":[]string{"ouder", "kind"}}}
+
+* Testing structs: Where is the difference?
+
+We can use a text editor and scan very long lines ourself
+
+  got  &model.Category{Id:100, ParentId:1, Path:"1_100", Level:2, Locales:[]string{"nl", "en"}, Label:map[string]string{"nl":"kind", "en":"child"}, Status:1, Config:(*model.CategoryConfig)(0xc2080923c0), Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{}, Breadcrumbs:map[string][]string{"nl":[]string{"ouder", "kind"}, "en":[]string{"parent", "child"}}}
+  want &model.Category{Id:100, ParentId:1, Path:"1_100", Level:2, Locales:[]string{"nl", "en"}, Label:map[string]string{"nl":"kind", "en":"child"}, Status:1, Config:(*model.CategoryConfig)(0xc208092180), Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{}, Breadcrumbs:map[string][]string{"en":[]string{"parent", "child"}, "nl":[]string{"ouder", "kind"}}}
+
+* Testing structs: Where is the difference?
+
+Is this the difference?
+
+  got  &model.Category{..., Breadcrumbs:map[string][]string{"nl":[]string{"ouder", "kind"}, "en":[]string{"parent", "child"}}}
+  want &model.Category{..., Breadcrumbs:map[string][]string{"en":[]string{"parent", "child"}, "nl":[]string{"ouder", "kind"}}}
+
+Nope, since the ordering of keys in maps is (somewhat) random
+
+* Testing structs: Where is the difference?
+
+What if the difference is here?
+
+  got  &model.Category{..., Config:(*model.CategoryConfig)(0xc2080923c0), Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{}, Breadcrumbs:map[string][]string{"nl":[]string{"ouder", "kind"}, "en":[]string{"parent", "child"}}}
+  want &model.Category{..., Config:(*model.CategoryConfig)(0xc208092180), Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{}, Breadcrumbs:map[string][]string{"en":[]string{"parent", "child"}, "nl":[]string{"ouder", "kind"}}}
+
+* Testing structs: A better DeepEqual
+
+insert Pascals code here ...
+
+* Mocking transient functions
+
+That may work most of the time
+
+.code main_test.go /j1 OMIT/,/J1 OMIT/
+
+* Mocking transient functions
+
+This will not work almost everytime
+
+.code main_test.go /j2 OMIT/,/J2 OMIT/
+
+* Mocking transient functions
+
+This will work again
+
+.code main_test.go /j3 OMIT/,/J3 OMIT/
+
+* Good candidates for stub functions
+
+- flags
+- time.Now()
+- math/rand/*
+- crypto/rand/*
+
+* Time for
+
+Questions
