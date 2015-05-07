@@ -103,12 +103,15 @@ func TestCompare3(t *testing.T) {
 // f OMIT
 func compareJSON(a, b string) (bool, error) {
 	var aa, bb map[string]interface{}
+
 	if err := json.Unmarshal([]byte(a), &aa); err != nil {
 		return false, err
 	}
+
 	if err := json.Unmarshal([]byte(b), &bb); err != nil {
 		return false, err
 	}
+
 	return reflect.DeepEqual(aa, bb), nil
 }
 
@@ -129,18 +132,26 @@ func TestCompareJSON1(t *testing.T) {
 	// G1 OMIT
 	for i, tt := range tests {
 		cmp, err := compareJSON(tt.a, tt.b)
-		if got, want := err, tt.err; got != nil &&
-			!regexp.MustCompile(want).MatchString(got.Error()) {
+
+		// we have an error
+		if got, want := err, tt.err; got != nil && !matchError(got, want) {
 			t.Errorf("%d: got %q want %q", i, got, want)
 			continue
 		}
+
+		// we have no error
 		if got, want := err, tt.err; got == nil && want != "" {
 			t.Errorf("%d: got %q want %q", i, got, want)
 		}
+
 		if got, want := cmp, tt.eq; got != want {
 			t.Errorf("%d: got %v want %v", i, got, want)
 		}
 	}
+}
+
+func matchError(got error, want string) bool {
+	return regexp.MustCompile(want).MatchString(got.Error())
 }
 
 // G2 OMIT
@@ -213,6 +224,7 @@ func TestNewAddress3(t *testing.T) {
 
 	for i, tt := range tests {
 		addr := NewAddress(tt.street, tt.city, tt.zip)
+
 		if got, want := addr, tt.addr; !reflect.DeepEqual(got, want) {
 			t.Errorf("%d: got %#v want %#v", i, got, want)
 		}
@@ -232,6 +244,7 @@ func TestNewAddress4(t *testing.T) {
 
 	for _, tt := range tests {
 		addr := NewAddress(tt.street, tt.city, tt.zip)
+
 		verify.Values(t, "address", addr, tt.addr)
 	}
 }
@@ -276,6 +289,7 @@ func mysqlNowNS2() string {
 
 func TestMySQLNowNS2(t *testing.T) {
 	sometime := time.Date(2015, 05, 07, 00, 01, 02, 03, time.Local)
+
 	timeNow = func() time.Time { return sometime }
 
 	if got, want := mysqlNowNS2(), sometime.Format("2006-01-02 15:04:05.999999999"); got != want {

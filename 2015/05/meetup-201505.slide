@@ -2,7 +2,7 @@ Testing with Go
 Lessons learned
 7 May 2015
 
-Frank Schroeder
+Frank Schröder
 Architect, eBay Classifieds Group Amsterdam
 frschroeder@ebay.com
 
@@ -16,13 +16,13 @@ frschroeder@ebay.com
 
 * Testing
 
-- Unit tests
+- Writing unit tests
 - Comparison with DeepEqual
 - Mocking `time.Now()` and `math.Rand()`
 
 * Unit tests
 
-Lets write some tests for a simple function
+Lets test this function
 
 .code main_test.go /a OMIT/,/A OMIT/
 
@@ -46,11 +46,13 @@ Anonymous structs and standard names (`tests`)
 
 * Fourth attempt
 
-`got != want` pattern
+'got != want' pattern
 
 .code main_test.go /e OMIT/,/E OMIT/
 
 * Testing errors
+
+Lets test a slightly more complex function
 
 .code main_test.go /f OMIT/,/F OMIT/
 
@@ -74,7 +76,7 @@ Anonymous structs and standard names (`tests`)
 
 .code main_test.go /i2 OMIT/,/I2 OMIT/
 
-* Testing structs: DeepEqual time
+* Testing structs: Using DeepEqual
 
 .code main_test.go /i3 OMIT/,/I3 OMIT/
 
@@ -132,11 +134,18 @@ Is this the difference?
   got  &model.Category{..., Breadcrumbs:map[string][]string{"nl":[]string{"ouder", "kind"}, "en":[]string{"parent", "child"}}}
   want &model.Category{..., Breadcrumbs:map[string][]string{"en":[]string{"parent", "child"}, "nl":[]string{"ouder", "kind"}}}
 
+* Testing structs: Where is the difference?
+
 Nope, since the ordering of keys in maps is (somewhat) random
+
+  got  &model.Category{..., Breadcrumbs:map[string][]string{"nl":[]string{"ouder", "kind"}, "en":[]string{"parent", "child"}}}
+  want &model.Category{..., Breadcrumbs:map[string][]string{"en":[]string{"parent", "child"}, "nl":[]string{"ouder", "kind"}}}
 
 * Testing structs: Where is the difference?
 
 What if the difference is here?
+
+`%#v` does not format pointers in structs
 
   got  &model.Category{..., Config:(*model.CategoryConfig)(0xc2080923c0), Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{}, Breadcrumbs:map[string][]string{"nl":[]string{"ouder", "kind"}, "en":[]string{"parent", "child"}}}
   want &model.Category{..., Config:(*model.CategoryConfig)(0xc208092180), Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{}, Breadcrumbs:map[string][]string{"en":[]string{"parent", "child"}, "nl":[]string{"ouder", "kind"}}}
