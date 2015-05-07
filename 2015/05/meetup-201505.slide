@@ -141,9 +141,21 @@ What if the difference is here?
   got  &model.Category{..., Config:(*model.CategoryConfig)(0xc2080923c0), Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{}, Breadcrumbs:map[string][]string{"nl":[]string{"ouder", "kind"}, "en":[]string{"parent", "child"}}}
   want &model.Category{..., Config:(*model.CategoryConfig)(0xc208092180), Children:[]int64{}, AttributeGroups:[]*model.AttributeGroup{}, Breadcrumbs:map[string][]string{"en":[]string{"parent", "child"}, "nl":[]string{"ouder", "kind"}}}
 
-* Testing structs: A better DeepEqual
+* Testing structs: verify.Values a better DeepEqual
 
-insert Pascals code here ...
+.link http://github.com/pascaldekloe/goe/verify
+
+	verify.Values(t, name, got, want)
+
+.code main_test.go /i4 OMIT/,/I4 OMIT/
+
+	--- FAIL: TestNewAddress4 (0.00s)
+		values.go:15: address values not equivalent:
+			/city: c != cx
+
+* Demo time
+
+Lets test with some real code
 
 * Mocking transient functions
 

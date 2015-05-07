@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/pascaldekloe/goe/verify"
 )
 
 // a OMIT
@@ -60,7 +62,7 @@ func TestCompare1(t *testing.T) {
 
 // d OMIT
 func TestCompare2(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		a, b string
 		eq   bool
 	}{
@@ -80,7 +82,7 @@ func TestCompare2(t *testing.T) {
 
 // e OMIT
 func TestCompare3(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		a, b string
 		eq   bool
 	}{
@@ -114,7 +116,7 @@ func compareJSON(a, b string) (bool, error) {
 
 // g1 OMIT
 func TestCompareJSON1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		a, b string
 		eq   bool
 		err  string
@@ -156,7 +158,7 @@ func NewAddress(street, city, zip string) Address {
 
 // i1 OMIT
 func TestNewAddress(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		street, city, zip string
 		addr              Address
 	}{
@@ -176,7 +178,7 @@ func TestNewAddress(t *testing.T) {
 
 // i2 OMIT
 func TestNewAddress2(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		street, city, zip string
 		addr              Address
 	}{
@@ -202,7 +204,7 @@ func TestNewAddress2(t *testing.T) {
 
 // i3 OMIT
 func TestNewAddress3(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		street, city, zip string
 		addr              Address
 	}{
@@ -211,15 +213,30 @@ func TestNewAddress3(t *testing.T) {
 
 	for i, tt := range tests {
 		addr := NewAddress(tt.street, tt.city, tt.zip)
-		ttAddr := Address{tt.street, tt.city, tt.zip}
-
-		if got, want := addr, ttAddr; !reflect.DeepEqual(got, want) {
+		if got, want := addr, tt.addr; !reflect.DeepEqual(got, want) {
 			t.Errorf("%d: got %#v want %#v", i, got, want)
 		}
 	}
 }
 
 // I3 OMIT
+
+// i4 OMIT
+func TestNewAddress4(t *testing.T) {
+	tests := []struct {
+		street, city, zip string
+		addr              Address
+	}{
+		{"s", "c", "z", Address{"s", "cx", "z"}},
+	}
+
+	for _, tt := range tests {
+		addr := NewAddress(tt.street, tt.city, tt.zip)
+		verify.Values(t, "address", addr, tt.addr)
+	}
+}
+
+// I4 OMIT
 
 // j1 OMIT
 func mysqlNow() string {
