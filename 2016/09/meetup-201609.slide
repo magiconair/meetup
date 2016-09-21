@@ -1,0 +1,114 @@
+Minimal Code
+21 Sep 2016
+
+Frank Schröder
+Architect, eBay Classifieds Group Amsterdam
+frschroeder@ebay.com
+
+* Intro
+
+About me
+
+- Full-time Gopher since 2012 (1.2)
+- Go in production since 2013
+- Working at eBay/Marktplaats on real-time messaging
+
+Open Source
+
+.link http://github.com/eBay/fabio/ github.com/eBay/fabio - consul-aware load-balancer
+.link http://github.com/magiconair/properties/ github.com/magiconair/properties - Java properties library
+
+* Challenge
+
+How little code can you get away with?
+
+* Testing
+
+- Unit tests
+- Integration tests
+- End-to-end tests
+
+* Table driven unit tests
+
+	func TestFoo(t *testing.T) {
+		tests := []struct {
+			in, out string
+		}{
+			{"", ""},
+			{"foo", "bar"},
+		}
+		for i, tt := range tests {
+			if got, want := foo(tt.in), tt.out; got != want {
+				t.Errorf("%d: got %s want %s", i, got, want)
+			}
+		}
+	}
+
+* Integration tests
+
+	import "github.com/stretchr/testify/assert"
+
+	func TestRedis(t *testing.T) {
+		m := newMembership("localhost:6379")
+
+		err := m.Join("frank")
+		assert.IsNil(err)
+
+		members := m.Members()
+		assert.NotEmpty(members)
+		assert.Equals(len(members), 1)
+		assert.Equals(m[0], "frank")
+
+		err = m.Leave("frank")
+		assert.IsNil(err)
+
+		members = m.Members()
+		assert.Empty(members)
+	}
+
+* My simple assert framework
+
+	package assert
+
+	import (
+		"fmt"
+		"path/filepath"
+		"reflect"
+		"runtime"
+		"testing"
+	)
+
+	func Equal(t *testing.T, calldepth int, desc string, got, want interface{}) {
+		_, file, line, _ := runtime.Caller(calldepth)
+		if !reflect.DeepEqual(got, want) {
+			fmt.Printf("\t%s:%d: %s: got %v want %v\n", filepath.Base(file), line, desc, got, want)
+			t.Fail()
+		}
+	}
+
+* Integration tests
+
+	func TestRedis(t *testing.T) {
+		assertEqual := func(got, want interface{}) { assert.Equal(t, 2, desc, got, want) }
+
+		m := newMembership("localhost:6379")
+
+		err := m.Join("frank")
+		assertEqual(err, nil)
+
+		members := m.Members()
+		assertEqual(len(members) > 0, true)
+		assertEqual(len(members), 1)
+		assertEqual(m[0], "frank")
+
+		err = m.Leave("frank")
+		assertEqual(err, nil)
+
+		members = m.Members()
+		assertEqual(len(members), 0)
+	}
+
+* Time for
+
+Questions
+
